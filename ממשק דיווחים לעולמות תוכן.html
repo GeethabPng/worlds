@@ -15,7 +15,7 @@
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
             height: 100vh;
-            background: linear-gradient(135deg, #fafbff 0%, #f0f4ff 40%, #fdf4f8 70%, #f5f0ff 100%);
+            background: linear-gradient(135deg, #ffffff 0%, #f8faff 35%, #fff5f7 65%, #faf8ff 100%);
             padding: 0.5rem 1rem;
             overflow: hidden;
             user-select: none;
@@ -106,16 +106,16 @@
         .circle {
             position: absolute;
             border-radius: 50%;
-            background: rgba(255, 255, 255, 0.4);
-            border: 3px solid rgba(129, 140, 248, 0.45);
+            background: rgba(255, 255, 255, 0.5);
+            border: 2.5px solid rgba(165, 180, 252, 0.5);
             cursor: move;
             transition: width 0.3s, height 0.3s, background-color 0.3s, border-color 0.3s, left 0.3s, top 0.3s;
             display: flex;
             align-items: flex-start;
             justify-content: center;
             padding-top: 1.5rem;
-            color: #4338ca;
-            box-shadow: 0 8px 32px rgba(99, 102, 241, 0.08), inset 0 0 40px rgba(255, 255, 255, 0.3);
+            color: #6366f1;
+            box-shadow: 0 8px 32px rgba(99, 102, 241, 0.06), inset 0 0 60px rgba(255, 255, 255, 0.5);
             backdrop-filter: blur(4px);
         }
 
@@ -128,9 +128,9 @@
         }
 
         .circle:hover {
-            border-color: rgba(129, 140, 248, 0.7);
-            background: rgba(255, 255, 255, 0.55);
-            box-shadow: 0 12px 40px rgba(99, 102, 241, 0.12), inset 0 0 40px rgba(255, 255, 255, 0.4);
+            border-color: rgba(165, 180, 252, 0.75);
+            background: rgba(255, 255, 255, 0.65);
+            box-shadow: 0 12px 40px rgba(99, 102, 241, 0.1), inset 0 0 60px rgba(255, 255, 255, 0.5);
         }
 
         .circle-title {
@@ -138,12 +138,12 @@
             font-weight: 700;
             padding: 0.3rem 0.85rem;
             border-radius: 0.5rem;
-            background: rgba(255, 255, 255, 0.85);
+            background: rgba(255, 255, 255, 0.9);
             text-align: center;
             max-width: 80%;
             pointer-events: auto;
             cursor: text;
-            color: #4338ca;
+            color: #6366f1;
             letter-spacing: 0.01em;
         }
 
@@ -157,11 +157,11 @@
             padding: 0.3rem 0.7rem;
             border-radius: 999px;
             font-size: 0.85rem;
-            color: #312e81;
+            color: #4f46e5;
             font-weight: 600;
             cursor: grab;
             box-shadow: 0 2px 8px rgba(99, 102, 241, 0.1);
-            border: 1.5px solid rgba(129, 140, 248, 0.3);
+            border: 1.5px solid rgba(165, 180, 252, 0.35);
             z-index: 50;
             transition: transform 0.2s, box-shadow 0.2s, left 0.3s, top 0.3s;
             max-width: 140px;
@@ -197,7 +197,7 @@
             padding: 0.5rem 1rem;
             background: rgba(255, 255, 255, 0.65);
             border-radius: 0.75rem;
-            border: 2px dashed rgba(129, 140, 248, 0.25);
+            border: 2px dashed rgba(165, 180, 252, 0.3);
             flex-shrink: 0;
             backdrop-filter: blur(4px);
         }
@@ -205,7 +205,7 @@
         .box {
             position: relative;
             /* For proper dragging offset calc */
-            background: linear-gradient(135deg, #818cf8, #6366f1);
+            background: linear-gradient(135deg, #a5b4fc, #818cf8);
             padding: 0.6rem 1.1rem;
             border-radius: 0.75rem;
             box-shadow: 0 4px 14px rgba(99, 102, 241, 0.2);
@@ -655,7 +655,7 @@
             return { x, y };
         }
 
-        // Collision Resolution with sunflower distribution and rectangular overlap detection
+        // Collision Resolution with sunflower distribution and radial push
         function resolveConceptCollisions() {
             const placed = concepts.filter(c => c.circleIds.length > 0);
 
@@ -685,8 +685,8 @@
                 const assigned = circles.filter(ci => group[0].circleIds.includes(ci.id));
                 const minRadius = Math.min(...assigned.map(ci => ci._radius));
                 const numCircles = group[0].circleIds.length;
-                // Reduce spread for intersection regions (multiple circles)
-                const spread = Math.max(25, (minRadius - 55) * 0.65 / Math.sqrt(numCircles));
+                // Use most of the available circle area for distribution
+                const spread = Math.max(30, (minRadius - 35) * 0.8 / Math.sqrt(numCircles));
 
                 // Center of distribution
                 let cx = 0, cy = 0;
@@ -701,8 +701,9 @@
                 });
             });
 
-            // 3. Rectangular collision solver
-            const iterations = 80;
+            // 3. Radial collision solver - push along center-to-center direction
+            //    This preserves the 2D sunflower distribution instead of creating columns
+            const iterations = 60;
             const tagHalfW = 50;  // approximate half-width of concept tag
             const tagHalfH = 14;  // approximate half-height of concept tag
             const gap = 4;        // minimum gap between tags
@@ -721,17 +722,22 @@
                         const overlapY = (tagHalfH * 2 + gap) - Math.abs(dy);
 
                         if (overlapX > 0 && overlapY > 0) {
-                            // Separate along axis of least overlap
-                            if (overlapX < overlapY) {
-                                const shift = overlapX / 2;
-                                const sign = dx >= 0 ? 1 : -1;
-                                c1._x += sign * shift;
-                                c2._x -= sign * shift;
+                            // Push along center-to-center direction (radial)
+                            const dist = Math.sqrt(dx * dx + dy * dy);
+                            if (dist < 1) {
+                                // Nearly identical positions - use deterministic offset
+                                const seedAngle = ((c1.id * 1337 + c2.id * 71) % 628) / 100;
+                                c1._x += Math.cos(seedAngle) * 8;
+                                c1._y += Math.sin(seedAngle) * 8;
+                                c2._x -= Math.cos(seedAngle) * 8;
+                                c2._y -= Math.sin(seedAngle) * 8;
                             } else {
-                                const shift = overlapY / 2;
-                                const sign = dy >= 0 ? 1 : -1;
-                                c1._y += sign * shift;
-                                c2._y -= sign * shift;
+                                const minOverlap = Math.min(overlapX, overlapY);
+                                const pushScale = minOverlap * 0.55 / dist;
+                                c1._x += dx * pushScale;
+                                c1._y += dy * pushScale;
+                                c2._x -= dx * pushScale;
+                                c2._y -= dy * pushScale;
                             }
                             moved = true;
                         }
