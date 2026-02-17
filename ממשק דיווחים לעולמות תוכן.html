@@ -1,0 +1,1150 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>התאמת מושגים לעולמות תוכן - דיאגרמת ון</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
+            height: 100vh;
+            background: linear-gradient(to bottom right, #e9d5ff, #fce7f3, #dbeafe);
+            padding: 0.5rem 1rem;
+            overflow: hidden;
+            user-select: none;
+            display: flex;
+            flex-direction: column;
+            touch-action: none;
+            /* Prevent browser zooming/panning on touch */
+        }
+
+        .top-controls {
+            display: flex;
+            justify-content: center;
+            gap: 1rem;
+            margin-bottom: 0.5rem;
+            z-index: 100;
+            position: relative;
+            flex-shrink: 0;
+        }
+
+        .btn-circle {
+            width: 56px;
+            height: 56px;
+            border-radius: 50%;
+            background: white;
+            border: none;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            font-size: 2rem;
+            color: #9333ea;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .btn-circle:hover {
+            box-shadow: 0 10px 15px rgba(0, 0, 0, 0.15);
+            transform: scale(1.1);
+        }
+
+        .btn-save,
+        .btn-reset,
+        .btn-export,
+        .btn-import {
+            padding: 0.5rem 1.25rem;
+            border-radius: 9999px;
+            background: white;
+            border: none;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            font-size: 1rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-weight: 600;
+        }
+
+        .btn-save {
+            color: #9333ea;
+        }
+
+        .btn-reset {
+            color: #dc2626;
+        }
+
+        .btn-save:hover,
+        .btn-reset:hover,
+        .btn-export:hover,
+        .btn-import:hover {
+            box-shadow: 0 10px 15px rgba(0, 0, 0, 0.15);
+            transform: translateY(-2px);
+        }
+
+        .btn-export {
+            color: #2563eb;
+        }
+
+        .btn-import {
+            color: #059669;
+        }
+
+        .diagram-container {
+            position: relative;
+            width: 100%;
+            flex: 1;
+            min-height: 0;
+            margin-bottom: 0.5rem;
+            border-radius: 1rem;
+            background: rgba(255, 255, 255, 0.2);
+            touch-action: none;
+        }
+
+        .circle {
+            position: absolute;
+            border-radius: 50%;
+            background: rgba(168, 85, 247, 0.25);
+            border: 4px solid #a855f7;
+            cursor: move;
+            transition: width 0.3s, height 0.3s, background-color 0.3s, border-color 0.3s, left 0.3s, top 0.3s;
+            display: flex;
+            align-items: flex-start;
+            justify-content: center;
+            padding-top: 1.5rem;
+            color: #581c87;
+        }
+
+        /* When dragging, disable transition for smooth follow */
+        .circle.is-dragging {
+            transition: none;
+            opacity: 0.8;
+            z-index: 1000 !important;
+            cursor: grab;
+        }
+
+        .circle:hover {
+            border-color: #7c3aed;
+            background: rgba(168, 85, 247, 0.35);
+        }
+
+        .circle-title {
+            font-size: 1.25rem;
+            font-weight: bold;
+            padding: 0.25rem 0.75rem;
+            border-radius: 0.5rem;
+            background: rgba(255, 255, 255, 0.7);
+            text-align: center;
+            max-width: 80%;
+            pointer-events: auto;
+            cursor: text;
+        }
+
+        .circle-title:hover {
+            background: white;
+        }
+
+        .concept-tag {
+            position: absolute;
+            background: white;
+            padding: 0.4rem 0.8rem;
+            border-radius: 999px;
+            font-size: 0.95rem;
+            color: #581c87;
+            font-weight: 600;
+            cursor: grab;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            border: 1px solid #a855f7;
+            z-index: 50;
+            transition: transform 0.2s, box-shadow 0.2s, left 0.3s, top 0.3s;
+            max-width: 160px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            transform: translate(-50%, -50%);
+        }
+
+        .concept-tag.is-dragging {
+            transition: none;
+            z-index: 100;
+            transform: translate(-50%, -50%) scale(1.1);
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
+            opacity: 0.9;
+        }
+
+        .concept-tag:hover {
+            z-index: 60;
+            transform: translate(-50%, -50%) scale(1.05);
+        }
+
+        .boxes-container {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 0.5rem;
+            align-items: center;
+            margin-bottom: 0.25rem;
+            min-height: 50px;
+            padding: 0.5rem 1rem;
+            background: rgba(255, 255, 255, 0.4);
+            border-radius: 0.75rem;
+            border: 2px dashed rgba(168, 85, 247, 0.3);
+            flex-shrink: 0;
+        }
+
+        .box {
+            position: relative;
+            /* For proper dragging offset calc */
+            background: linear-gradient(to bottom right, #fcd34d, #fb923c);
+            padding: 0.75rem 1.25rem;
+            border-radius: 0.75rem;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            cursor: grab;
+            font-weight: bold;
+            color: white;
+            font-size: 1.1rem;
+            transition: transform 0.2s;
+        }
+
+        .box:hover {
+            transform: translateY(-2px) scale(1.05);
+        }
+
+        .box:active {
+            cursor: grabbing;
+        }
+
+        .btn-small {
+            width: 48px;
+            height: 48px;
+            border-radius: 0.75rem;
+            background: white;
+            border: none;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            font-size: 1.5rem;
+            color: #f97316;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+        }
+
+        .btn-small:hover {
+            transform: scale(1.1);
+        }
+
+        .input-container {
+            display: flex;
+            justify-content: center;
+            margin-top: 0.25rem;
+            margin-bottom: 0.25rem;
+            flex-shrink: 0;
+        }
+
+        .text-input {
+            width: 400px;
+            padding: 1rem 1.5rem;
+            border-radius: 9999px;
+            border: none;
+            background: white;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            text-align: center;
+            font-size: 1.1rem;
+            outline: none;
+        }
+
+        .text-input:focus {
+            box-shadow: 0 0 0 3px rgba(168, 85, 247, 0.4);
+        }
+
+        .separate-btn {
+            position: absolute;
+            background: #ef4444;
+            color: white;
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            border: 2px solid white;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            z-index: 20;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+            top: 0;
+            left: 0;
+            transform: translate(-30%, -30%);
+            display: none;
+            /* Hidden by default, shown if grouped */
+        }
+
+        .circle:hover .separate-btn {
+            display: flex;
+            /* Show on hover if grouped */
+        }
+
+        .separate-btn:hover {
+            transform: translate(-30%, -30%) scale(1.1);
+            background: #dc2626;
+        }
+
+        /* Highlight drop zones */
+        .highlight-zone {
+            background-color: rgba(255, 255, 255, 0.5);
+            box-shadow: inset 0 0 20px rgba(168, 85, 247, 0.5);
+        }
+    </style>
+</head>
+
+<body>
+    <div class="top-controls">
+        <button class="btn-reset" onclick="resetState()">🔄 איפוס</button>
+        <button class="btn-save" onclick="saveState()">💾 שמירה</button>
+        <button class="btn-export" onclick="exportCSV()">📤 ייצוא CSV</button>
+        <button class="btn-import" onclick="document.getElementById('csv-file-input').click()">📥 ייבוא CSV</button>
+        <input type="file" id="csv-file-input" accept=".csv" style="display:none" onchange="importCSV(event)">
+        <button class="btn-circle" onclick="addCircle()">+</button>
+    </div>
+
+    <!-- The main canvas for the Venn Diagram -->
+    <div class="diagram-container" id="diagram-container"></div>
+
+    <div class="boxes-container" id="boxes-container">
+        <!-- Unplaced concepts go here -->
+        <button class="btn-small" onclick="addBox()">+</button>
+    </div>
+
+    <div class="input-container">
+        <input type="text" class="text-input" id="concept-input" placeholder="הקלד מושג ולחץ אנטר..."
+            onkeypress="handleInput(event)" />
+    </div>
+
+    <script>
+        // --- Data Models ---
+        let circles = [
+            { id: 1, title: 'עולם תוכן 1', x: 250, y: 200, groupId: null, _radius: 130 },
+            { id: 2, title: 'עולם תוכן 2', x: 550, y: 200, groupId: null, _radius: 130 }
+        ];
+
+        let concepts = [
+            { id: 1, text: 'מושג 1', circleIds: [] },
+            { id: 2, text: 'מושג 2', circleIds: [] },
+            { id: 3, text: 'מושג 3', circleIds: [] }
+        ];
+
+        let nextCircleId = 3;
+        let nextConceptId = 4;
+        let nextGroupId = 1;
+
+        const BASE_RADIUS = 130;
+
+        let draggedItem = null; // { type: 'circle' | 'concept', id: ... }
+        let dragOffset = { x: 0, y: 0 };
+        let dragStartPos = { x: 0, y: 0 };
+        let didDrag = false; // true if mouse moved significantly during drag
+
+        // --- Init ---
+        function init() {
+            loadState();
+            render();
+
+            window.addEventListener('mousemove', onMouseMove);
+            window.addEventListener('mouseup', onMouseUp);
+        }
+
+        // --- Actions ---
+        function addCircle() {
+            const x = 150 + (circles.length * 50) % 500;
+            const y = 150 + (circles.length * 40) % 300;
+            circles.push({
+                id: nextCircleId++,
+                title: `עולם תוכן ${nextCircleId}`,
+                x, y,
+                groupId: null,
+                _radius: BASE_RADIUS
+            });
+            render();
+        }
+
+        function addBox() {
+            concepts.push({
+                id: nextConceptId++,
+                text: `מושג ${nextConceptId}`,
+                circleIds: []
+            });
+            render();
+        }
+
+        function handleInput(e) {
+            if (e.key === 'Enter') {
+                const val = e.target.value.trim();
+                let inputs = val.split(',').map(s => s.trim()).filter(s => s);
+                if (inputs.length > 0) {
+                    inputs.forEach(text => {
+                        concepts.push({
+                            id: nextConceptId++,
+                            text: text,
+                            circleIds: []
+                        });
+                    });
+                    e.target.value = '';
+                    render();
+                }
+            }
+        }
+
+        function separateCircle(id) {
+            const c = circles.find(x => x.id === id);
+            if (c && c.groupId) {
+                const oldGroupId = c.groupId;
+                c.groupId = null;
+                c.x += 60; // shift slightly to indicating breaking free
+                c.y += 60;
+
+                // Check if remaining group has < 2 members, if so dissolve it
+                const remaining = circles.filter(x => x.groupId === oldGroupId);
+                if (remaining.length < 2) {
+                    remaining.forEach(r => r.groupId = null);
+                }
+
+                render();
+            }
+        }
+
+        function editCircleTitle(id) {
+            const c = circles.find(x => x.id === id);
+            const newTitle = prompt('שם עולם התוכן:', c.title);
+            if (newTitle) {
+                c.title = newTitle;
+                render();
+            }
+        }
+
+        // --- Rendering ---
+        function render() {
+            const container = document.getElementById('diagram-container');
+            const boxesContainer = document.getElementById('boxes-container');
+
+            // 0. Pre-calculate Radii (needed for layout)
+            circles.forEach(c => {
+                const count = concepts.filter(con => con.circleIds.includes(c.id)).length;
+                c._radius = BASE_RADIUS + (count * 2);
+            });
+
+            // 1. Calculate Venn Layouts for Groups
+            applyVennLayouts();
+
+            // 2. Resolve Collisions
+            resolveConceptCollisions();
+
+            // 3. Clear & Redraw
+            container.innerHTML = '';
+
+            // Clear boxes container but keep button
+            const btn = boxesContainer.querySelector('.btn-small');
+            boxesContainer.innerHTML = '';
+
+            // 3. Render Circles
+            let circleElements = {}; // Map id -> element for reference
+
+            circles.forEach(c => {
+                const el = document.createElement('div');
+                el.className = 'circle';
+                if (draggedItem && draggedItem.type === 'circle' && draggedItem.id === c.id) {
+                    el.classList.add('is-dragging');
+                }
+
+                el.style.width = (c._radius * 2) + 'px';
+                el.style.height = (c._radius * 2) + 'px';
+                el.style.left = (c.x - c._radius) + 'px';
+                el.style.top = (c.y - c._radius) + 'px';
+                el.dataset.id = c.id;
+
+                // Title
+                const title = document.createElement('div');
+                title.className = 'circle-title';
+                title.innerText = c.title;
+                title.onmousedown = (e) => {
+                    e.stopPropagation(); // prevent drag start on title immediately? No, we want drag.
+                    // Actually, let's allow drag on title too.
+                };
+                title.ondblclick = (e) => {
+                    e.stopPropagation();
+                    editCircleTitle(c.id);
+                };
+                el.appendChild(title);
+
+                // Separate Button (only if grouped)
+                if (c.groupId) {
+                    const sep = document.createElement('div');
+                    sep.className = 'separate-btn';
+                    sep.innerText = '✕';
+                    sep.onmousedown = (e) => {
+                        e.stopPropagation();
+                        separateCircle(c.id);
+                    };
+                    el.appendChild(sep);
+                }
+
+                el.onmousedown = (e) => startDrag(e, 'circle', c.id);
+
+                container.appendChild(el);
+                circleElements[c.id] = el;
+            });
+
+            // 4. Render Concepts
+            concepts.forEach(c => {
+                if (c.circleIds.length === 0) {
+                    // Render in Box Container
+                    const el = document.createElement('div');
+                    el.className = 'box';
+                    el.innerText = c.text;
+                    el.onmousedown = (e) => startDrag(e, 'concept', c.id);
+                    el.ondblclick = () => {
+                        if (confirm('למחוק מושג?')) {
+                            concepts = concepts.filter(x => x.id !== c.id);
+                            render();
+                        }
+                    };
+                    boxesContainer.appendChild(el);
+                } else {
+                    // Render in Diagram
+                    const el = document.createElement('div');
+                    el.className = 'concept-tag';
+                    el.innerText = c.text;
+
+                    if (draggedItem && draggedItem.type === 'concept' && draggedItem.id === c.id) {
+                        el.classList.add('is-dragging');
+                        // Use temp coordinates if dragging
+                        el.style.left = draggedItem.currentX + 'px';
+                        el.style.top = draggedItem.currentY + 'px';
+                    } else {
+                        // Use resolved position
+                        if (c._x === undefined || c._y === undefined) {
+                            const pos = getConceptPosition(c);
+                            c._x = pos.x; c._y = pos.y;
+                        }
+                        el.style.left = c._x + 'px';
+                        el.style.top = c._y + 'px';
+                    }
+
+                    el.onmousedown = (e) => startDrag(e, 'concept', c.id);
+                    el.ondblclick = (e) => {
+                        // Return to box on double-click
+                        e.stopPropagation();
+                        c.circleIds = [];
+                        render();
+                    };
+
+                    container.appendChild(el);
+                }
+            });
+
+            boxesContainer.appendChild(btn);
+        }
+
+        function applyVennLayouts() {
+            // Find groups
+            const groups = {};
+            circles.forEach(c => {
+                if (c.groupId) {
+                    if (!groups[c.groupId]) groups[c.groupId] = [];
+                    groups[c.groupId].push(c);
+                }
+            });
+
+            // Apply layout to each group
+            Object.values(groups).forEach(group => {
+                const count = group.length;
+                if (count < 2) return;
+
+                // Calculate center (of current positions) to maintain general location
+                let cx = 0, cy = 0;
+                group.forEach(c => { cx += c.x; cy += c.y; });
+                cx /= count;
+                cy /= count;
+
+                // Standard Venn Geometry
+                // Distance between centers should be less than 2*Radius to overlap
+                // Ideal overlap for 3 circles is usually r (center to center = r)
+
+                const r = group[0]._radius; // Use first circle's radius as ref? Or average?
+                // To keep it simple, assume similar radii or use max
+                // Let's use a fixed offset proportional to radius
+                const offset = r * 0.8;
+
+                if (count === 2) {
+                    group[0].x = cx - offset / 2;
+                    group[0].y = cy;
+                    group[1].x = cx + offset / 2;
+                    group[1].y = cy;
+                } else if (count === 3) {
+                    // Top, Bottom Left, Bottom Right
+                    // Height of triangle = sqrt(3)/2 * side
+                    // side = offset * 1.5 approx? 
+                    // Let's manually tweak for "The classic Venn look"
+                    // Center to center distance should be r.
+                    const h = r * Math.sin(Math.PI / 3); // Height of equilateral triangle with side r
+
+                    // Centroid is 1/3 from base of height h
+                    // We need the sum of displacements to be 0 to avoid drifting
+                    // Top vertex is at 2/3 h above, bottom vertices at 1/3 h below
+                    group[0].x = cx;
+                    group[0].y = cy - h * (2 / 3);
+
+                    group[1].x = cx - r * 0.5; // Left
+                    group[1].y = cy + h * (1 / 3);
+
+                    group[2].x = cx + r * 0.5; // Right
+                    group[2].y = cy + h * (1 / 3);
+                } else {
+                    // 4+ is complex, let's just do a grid or circular layout
+                    const step = (2 * Math.PI) / count;
+                    group.forEach((c, i) => {
+                        c.x = cx + Math.cos(i * step) * r * 0.8;
+                        c.y = cy + Math.sin(i * step) * r * 0.8;
+                    });
+                }
+            });
+        }
+
+        function getConceptPosition(concept) {
+            // Find assigned circles
+            const assigned = circles.filter(c => concept.circleIds.includes(c.id));
+            if (assigned.length === 0) return { x: 0, y: 0 };
+
+            // Calculate Centroid of assigned circles (Attraction)
+            let sx = 0, sy = 0;
+            assigned.forEach(c => {
+                sx += c.x;
+                sy += c.y;
+            });
+            let x = sx / assigned.length;
+            let y = sy / assigned.length;
+
+            // Apply Repulsion from other circles in the SAME group that are NOT assigned
+            // This pushes "A only" items away from B and C, etc.
+            if (assigned[0].groupId) {
+                const groupCircles = circles.filter(c => c.groupId === assigned[0].groupId);
+                const unassigned = groupCircles.filter(c => !concept.circleIds.includes(c.id));
+
+                unassigned.forEach(u => {
+                    const dx = x - u.x;
+                    const dy = y - u.y;
+                    const dist = Math.sqrt(dx * dx + dy * dy) || 1;
+
+                    // Push away vector
+                    // Strength depends on how close we are to the unassigned circle center
+                    // We want to push significantly if we are "inside" the group structure
+                    const pushFactor = 80; // pixels to push
+                    x += (dx / dist) * pushFactor;
+                    y += (dy / dist) * pushFactor;
+                });
+            }
+
+            return { x, y };
+        }
+
+        // New Collision Resolution
+        function resolveConceptCollisions() {
+            // Group concepts by their target zone (set of circleIds)
+            // But we actually just want to resolve ALL concepts in the diagram space.
+            // First, assign ideal positions.
+
+            const placed = concepts.filter(c => c.circleIds.length > 0);
+
+            placed.forEach(c => {
+                const pos = getConceptPosition(c);
+                // If checking for existing position in memory (for stable layout), use it?
+                // For now, reset to ideal and then jitter/resolve.
+                if (draggedItem && draggedItem.type === 'concept' && draggedItem.id === c.id) return; // skip dragged one
+
+                c._x = pos.x;
+                c._y = pos.y;
+            });
+
+            // Allow jitter to initial positions based on ID to avoid perfect stacking
+            placed.forEach(c => {
+                if (draggedItem && draggedItem.type === 'concept' && draggedItem.id === c.id) return;
+                c._x += (c.id * 1337) % 40 - 20;
+                c._y += (c.id * 71) % 40 - 20;
+            });
+
+            // Simple Iterative Solver
+            const iterations = 50;
+            const radius = 20; // approx radius of concept tag for collision (half width/height)
+
+            for (let k = 0; k < iterations; k++) {
+                let moved = false;
+                for (let i = 0; i < placed.length; i++) {
+                    for (let j = i + 1; j < placed.length; j++) {
+                        const c1 = placed[i];
+                        const c2 = placed[j];
+
+                        if (draggedItem && (draggedItem.id === c1.id || draggedItem.id === c2.id)) continue;
+
+                        const dx = c1._x - c2._x;
+                        const dy = c1._y - c2._y;
+                        const distSq = dx * dx + dy * dy;
+                        const minDist = radius * 2.5; // width + gap
+
+                        // Only resolve if very close
+                        if (distSq < minDist * minDist && distSq > 0.1) {
+                            const dist = Math.sqrt(distSq);
+                            const overlap = minDist - dist;
+                            const nx = dx / dist;
+                            const ny = dy / dist;
+
+                            // Move both apart
+                            const moveX = nx * overlap * 0.5;
+                            const moveY = ny * overlap * 0.5;
+
+                            c1._x += moveX;
+                            c1._y += moveY;
+                            c2._x -= moveX;
+                            c2._y -= moveY;
+                            moved = true;
+                        }
+                    }
+                }
+                if (!moved) break;
+            }
+        }
+
+        function startDrag(e, type, id) {
+            // Stop propagation to prevent dragging underlying circles when clicking a concept
+            e.stopPropagation();
+            e.preventDefault(); // Prevent text selection/native drag/screen pan for ALL types
+
+            dragStartPos = { x: e.clientX, y: e.clientY };
+            didDrag = false;
+            draggedItem = { type, id };
+
+            if (type === 'circle') {
+                const c = circles.find(x => x.id === id);
+                // Offset from circle center
+                dragOffset = { x: e.clientX - c.x, y: e.clientY - c.y }; // c.x/y are center coords relative to container?
+                // Wait, c.x/y are logical coordinates. 
+                // render() sets left/top relative to diagram-container.
+                // e.clientX is global.
+                // We need to calculate offset relative to the circle's stored x,y.
+                // Actually, let's keep it simple: 
+                // On mouse move, we calculate new X/Y based on mouse diff.
+
+                const containerRect = document.getElementById('diagram-container').getBoundingClientRect();
+                // Mouse pos relative to container
+                const relMX = e.clientX - containerRect.left;
+                const relMY = e.clientY - containerRect.top;
+
+                dragOffset = { x: relMX - c.x, y: relMY - c.y };
+
+            } else if (type === 'concept') {
+                // For concept, we just track current mouse pos for rendering the 'ghost'
+                draggedItem.currentX = e.clientX; // We will convert later
+                draggedItem.currentY = e.clientY;
+
+                // If it was in the box container, it has no x/y.
+                // If in diagram, it has computed x/y.
+                // We'll update visuals in mouseMove.
+            }
+        }
+
+        function onMouseMove(e) {
+            if (!draggedItem) return;
+            e.preventDefault();
+
+            // Check if mouse moved enough to count as a drag
+            const moveDist = Math.abs(e.clientX - dragStartPos.x) + Math.abs(e.clientY - dragStartPos.y);
+            if (moveDist > 5) didDrag = true;
+            if (!didDrag) return; // Don't start moving until threshold passed
+
+            const container = document.getElementById('diagram-container');
+            const rect = container.getBoundingClientRect();
+            const relX = e.clientX - rect.left;
+            const relY = e.clientY - rect.top;
+
+            if (draggedItem.type === 'circle') {
+                const c = circles.find(x => x.id === draggedItem.id);
+
+                // DETACH ON DRAG
+                if (c.groupId) {
+                    const oldGroupId = c.groupId;
+                    c.groupId = null;
+                    // Check dissolution
+                    const remaining = circles.filter(x => x.groupId === oldGroupId);
+                    if (remaining.length < 2) {
+                        remaining.forEach(r => r.groupId = null);
+                    }
+                }
+
+                c.x = relX - dragOffset.x;
+                c.y = relY - dragOffset.y;
+
+                // Optimization: update DOM directly instead of full render?
+                // For simplified code, full render is fine (it's fast enough for <100 items).
+                // But to be smoother, maybe throttle or just move element?
+                // Let's move element for performance.
+                requestAnimationFrame(() => render()); // Full render to update connections/layout
+
+            } else if (draggedItem.type === 'concept') {
+                // Just update the visual position data for the render loop
+                // We render relative to container.
+                draggedItem.currentX = relX;
+                draggedItem.currentY = relY;
+
+                // We need to force render to show it moving? 
+                // Creating a simplified drag element is better but let's try render.
+                requestAnimationFrame(() => render());
+
+                // Highlight potentially dropped zones?
+                // (Complex, skip for now - trusting users to drop near center)
+            }
+        }
+
+        function onMouseUp(e) {
+            if (!draggedItem) return;
+
+            // If it was a simple click (no drag), edit the concept
+            if (!didDrag && draggedItem.type === 'concept') {
+                editConcept(draggedItem.id);
+                draggedItem = null;
+                return;
+            }
+
+            if (draggedItem.type === 'circle') {
+                // Check if dropped near another circle to merge
+                // Only if not already grouped
+                const c = circles.find(x => x.id === draggedItem.id);
+                if (!c.groupId) {
+                    const others = circles.filter(x => x.id !== c.id);
+                    for (let other of others) {
+                        // Check distance
+                        const dx = c.x - other.x;
+                        const dy = c.y - other.y;
+                        const dist = Math.sqrt(dx * dx + dy * dy);
+                        // If center enters the other circle's radius roughly
+                        if (dist < (c._radius + other._radius) * 0.8) {
+                            mergeCircles(c, other);
+                            break;
+                        }
+                    }
+                }
+            } else if (draggedItem.type === 'concept') {
+                // Determine drop targets
+                const cIndex = circles.length;
+                const containerRect = document.getElementById('diagram-container').getBoundingClientRect();
+                const mx = e.clientX - containerRect.left;
+                const my = e.clientY - containerRect.top;
+
+                // Check which circles contain this point
+                const hitCircles = circles.filter(c => {
+                    const dx = mx - c.x;
+                    const dy = my - c.y;
+                    return Math.sqrt(dx * dx + dy * dy) < c._radius;
+                });
+
+                const concept = concepts.find(x => x.id === draggedItem.id);
+
+                if (hitCircles.length > 0) {
+                    concept.circleIds = hitCircles.map(x => x.id);
+                } else {
+                    // Check if dropped back into box container
+                    const boxRect = document.getElementById('boxes-container').getBoundingClientRect();
+                    if (
+                        e.clientX > boxRect.left && e.clientX < boxRect.right &&
+                        e.clientY > boxRect.top && e.clientY < boxRect.bottom
+                    ) {
+                        concept.circleIds = [];
+                    }
+                    // If dropped in empty space in diagram, do nothing (snap back)
+                    // Or we could let it float? No, must be in a set or the bank.
+                    // Let's default to: if no hit, and not in box, keep previous state (if it was placed) or box (if new)
+                    // Actually, easiest is: circleIds = [] if no circles hit.
+                    else {
+                        // Did we drag it OUT of diagram?
+                        // If we are outside diagram container?
+                        // e.clientX is global.
+                        if (
+                            e.clientX < containerRect.left || e.clientX > containerRect.right ||
+                            e.clientY < containerRect.top || e.clientY > containerRect.bottom
+                        ) {
+                            concept.circleIds = [];
+                        }
+                        // If inside diagram but not in circle? 
+                        // Let's send back to box. Simpler.
+                        else {
+                            concept.circleIds = [];
+                        }
+                    }
+                }
+            }
+
+            draggedItem = null;
+            render();
+            // Stop drag class
+            document.querySelectorAll('.is-dragging').forEach(el => el.classList.remove('is-dragging'));
+        }
+
+        function mergeCircles(c1, c2) {
+            // If different groups, merge groups
+            const gid = c1.groupId || c2.groupId || nextGroupId++;
+
+            // Update all circles in c1's old group and c2's old group
+            const affected = circles.filter(c =>
+                c.groupId === c1.groupId || c.groupId === c2.groupId || c.id === c1.id || c.id === c2.id
+            );
+
+            affected.forEach(c => c.groupId = gid);
+            render();
+        }
+
+        function editConcept(id) {
+            const c = concepts.find(x => x.id === id);
+            if (!c) return;
+            const newText = prompt('ערוך מושג:', c.text);
+            if (newText !== null && newText.trim()) {
+                c.text = newText.trim();
+                render();
+            }
+        }
+
+        function saveState() {
+            const s = { circles, concepts, nextCircleId, nextConceptId };
+            localStorage.setItem('conceptMatcherStateV2', JSON.stringify(s));
+            alert('נשמר בהצלחה!');
+        }
+
+        function loadState() {
+            const s = localStorage.getItem('conceptMatcherStateV2');
+            if (s) {
+                try {
+                    const d = JSON.parse(s);
+                    circles = d.circles || circles;
+                    concepts = d.concepts || concepts;
+                    nextCircleId = d.nextCircleId || nextCircleId;
+                    nextConceptId = d.nextConceptId || nextConceptId;
+                } catch (e) { console.error(e); }
+            }
+        }
+
+        function resetState() {
+            if (confirm('האם לאפס את הכל?')) {
+                localStorage.removeItem('conceptMatcherStateV2');
+                location.reload();
+            }
+        }
+
+        // --- CSV Export ---
+        function exportCSV() {
+            const BOM = '\uFEFF'; // UTF-8 BOM for Excel Hebrew support
+            let csvContent = BOM + '"שם מושג","שם עולם תוכן"\n';
+
+            concepts.forEach(concept => {
+                if (concept.circleIds.length === 0) {
+                    // Unassigned concept - empty world column
+                    csvContent += `"${concept.text}",""\n`;
+                } else {
+                    // One row per assigned world
+                    concept.circleIds.forEach(cid => {
+                        const circle = circles.find(c => c.id === cid);
+                        if (circle) {
+                            csvContent += `"${concept.text}","${circle.title}"\n`;
+                        }
+                    });
+                }
+            });
+
+            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'concepts_export.csv';
+            a.click();
+            URL.revokeObjectURL(url);
+        }
+
+        // --- CSV Import ---
+        function importCSV(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function (e) {
+                const text = e.target.result;
+                parseAndLoadCSV(text);
+            };
+            reader.readAsText(file, 'UTF-8');
+            // Reset the input so the same file can be re-imported
+            event.target.value = '';
+        }
+
+        function parseAndLoadCSV(text) {
+            // Parse CSV lines (handle quoted fields)
+            const lines = text.split(/\r?\n/).filter(l => l.trim());
+            if (lines.length < 1) return;
+
+            // Skip header row
+            const dataLines = lines.slice(1);
+
+            // Parse rows into { conceptName, worldName } pairs
+            const rows = [];
+            dataLines.forEach(line => {
+                const fields = parseCSVLine(line);
+                if (fields.length >= 1) {
+                    rows.push({
+                        conceptName: fields[0].trim(),
+                        worldName: fields.length > 1 ? fields[1].trim() : ''
+                    });
+                }
+            });
+
+            if (rows.length === 0) return;
+
+            // 1. Collect unique world names
+            const worldNames = [...new Set(rows.map(r => r.worldName).filter(w => w))];
+
+            // 2. Create circles for each world
+            const newCircles = [];
+            let cId = 1;
+            const spacing = 250;
+            const centerX = 400;
+            const centerY = 250;
+
+            worldNames.forEach((name, i) => {
+                // Position circles in a row or circle arrangement
+                let x, y;
+                if (worldNames.length <= 3) {
+                    // For 1-3 worlds, arrange nicely
+                    if (worldNames.length === 1) {
+                        x = centerX; y = centerY;
+                    } else if (worldNames.length === 2) {
+                        x = centerX + (i === 0 ? -80 : 80);
+                        y = centerY;
+                    } else {
+                        // Triangle
+                        const angles = [-Math.PI / 2, Math.PI / 6, 5 * Math.PI / 6];
+                        x = centerX + Math.cos(angles[i]) * 100;
+                        y = centerY + Math.sin(angles[i]) * 100;
+                    }
+                } else {
+                    // Circular arrangement
+                    const angle = (2 * Math.PI * i) / worldNames.length - Math.PI / 2;
+                    x = centerX + Math.cos(angle) * 150;
+                    y = centerY + Math.sin(angle) * 150;
+                }
+
+                newCircles.push({
+                    id: cId,
+                    title: name,
+                    x, y,
+                    groupId: null,
+                    _radius: BASE_RADIUS
+                });
+                cId++;
+            });
+
+            // 3. Build concept list
+            // Group rows by concept name to find which worlds each concept belongs to
+            const conceptMap = {}; // conceptName -> Set of worldNames
+            rows.forEach(r => {
+                if (!conceptMap[r.conceptName]) conceptMap[r.conceptName] = new Set();
+                if (r.worldName) conceptMap[r.conceptName].add(r.worldName);
+            });
+
+            const newConcepts = [];
+            let conId = 1;
+            Object.entries(conceptMap).forEach(([name, worlds]) => {
+                const circleIds = [];
+                worlds.forEach(wName => {
+                    const circle = newCircles.find(c => c.title === wName);
+                    if (circle) circleIds.push(circle.id);
+                });
+                newConcepts.push({
+                    id: conId++,
+                    text: name,
+                    circleIds: circleIds
+                });
+            });
+
+            // 4. Determine groups: if any concept belongs to multiple circles,
+            //    those circles should be in the same group
+            let gId = 1;
+            newConcepts.forEach(concept => {
+                if (concept.circleIds.length >= 2) {
+                    // All these circles need to be in the same group
+                    const relevantCircles = newCircles.filter(c => concept.circleIds.includes(c.id));
+
+                    // Find if any of them already has a groupId
+                    const existingGroupIds = relevantCircles.map(c => c.groupId).filter(g => g !== null);
+                    let targetGroupId;
+                    if (existingGroupIds.length > 0) {
+                        targetGroupId = existingGroupIds[0];
+                        // Merge all existing groups into one
+                        existingGroupIds.forEach(eg => {
+                            newCircles.forEach(c => {
+                                if (c.groupId === eg) c.groupId = targetGroupId;
+                            });
+                        });
+                    } else {
+                        targetGroupId = gId++;
+                    }
+                    relevantCircles.forEach(c => c.groupId = targetGroupId);
+                }
+            });
+
+            // 5. Apply to state
+            circles = newCircles;
+            concepts = newConcepts;
+            nextCircleId = cId;
+            nextConceptId = conId;
+            nextGroupId = gId;
+
+            render();
+            alert('ייבוא הושלם בהצלחה! ✓');
+        }
+
+        function parseCSVLine(line) {
+            // Simple CSV parser that handles quoted fields
+            const fields = [];
+            let current = '';
+            let inQuotes = false;
+
+            for (let i = 0; i < line.length; i++) {
+                const ch = line[i];
+                if (inQuotes) {
+                    if (ch === '"') {
+                        if (i + 1 < line.length && line[i + 1] === '"') {
+                            current += '"';
+                            i++; // skip escaped quote
+                        } else {
+                            inQuotes = false;
+                        }
+                    } else {
+                        current += ch;
+                    }
+                } else {
+                    if (ch === '"') {
+                        inQuotes = true;
+                    } else if (ch === ',') {
+                        fields.push(current);
+                        current = '';
+                    } else {
+                        current += ch;
+                    }
+                }
+            }
+            fields.push(current);
+            return fields;
+        }
+
+        // Run
+        init();
+
+    </script>
+</body>
+
+</html>
