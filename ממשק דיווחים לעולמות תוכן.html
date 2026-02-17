@@ -432,7 +432,7 @@
             // 0. Pre-calculate Radii (needed for layout)
             circles.forEach(c => {
                 const count = concepts.filter(con => con.circleIds.includes(c.id)).length;
-                c._radius = BASE_RADIUS + (count * 2);
+                c._radius = BASE_RADIUS + (count * 12);
             });
 
             // 1. Calculate Venn Layouts for Groups
@@ -572,9 +572,7 @@
                 // Distance between centers should be less than 2*Radius to overlap
                 // Ideal overlap for 3 circles is usually r (center to center = r)
 
-                const r = group[0]._radius; // Use first circle's radius as ref? Or average?
-                // To keep it simple, assume similar radii or use max
-                // Let's use a fixed offset proportional to radius
+                const r = Math.max(...group.map(c => c._radius)); // Use largest radius for layout
                 const offset = r * 0.8;
 
                 if (count === 2) {
@@ -640,7 +638,7 @@
                     // Push away vector
                     // Strength depends on how close we are to the unassigned circle center
                     // We want to push significantly if we are "inside" the group structure
-                    const pushFactor = 80; // pixels to push
+                    const pushFactor = Math.max(80, u._radius * 0.5);
                     x += (dx / dist) * pushFactor;
                     y += (dy / dist) * pushFactor;
                 });
@@ -649,34 +647,30 @@
             return { x, y };
         }
 
-        // New Collision Resolution
+        // Collision Resolution with rectangular overlap detection
         function resolveConceptCollisions() {
-            // Group concepts by their target zone (set of circleIds)
-            // But we actually just want to resolve ALL concepts in the diagram space.
-            // First, assign ideal positions.
-
             const placed = concepts.filter(c => c.circleIds.length > 0);
 
+            // 1. Assign ideal positions
             placed.forEach(c => {
+                if (draggedItem && draggedItem.type === 'concept' && draggedItem.id === c.id) return;
                 const pos = getConceptPosition(c);
-                // If checking for existing position in memory (for stable layout), use it?
-                // For now, reset to ideal and then jitter/resolve.
-                if (draggedItem && draggedItem.type === 'concept' && draggedItem.id === c.id) return; // skip dragged one
-
                 c._x = pos.x;
                 c._y = pos.y;
             });
 
-            // Allow jitter to initial positions based on ID to avoid perfect stacking
+            // 2. Add deterministic jitter to avoid perfect stacking
             placed.forEach(c => {
                 if (draggedItem && draggedItem.type === 'concept' && draggedItem.id === c.id) return;
                 c._x += (c.id * 1337) % 40 - 20;
                 c._y += (c.id * 71) % 40 - 20;
             });
 
-            // Simple Iterative Solver
-            const iterations = 50;
-            const radius = 20; // approx radius of concept tag for collision (half width/height)
+            // 3. Rectangular collision solver
+            const iterations = 80;
+            const tagHalfW = 55;  // approximate half-width of concept tag
+            const tagHalfH = 16;  // approximate half-height of concept tag
+            const gap = 6;        // minimum gap between tags
 
             for (let k = 0; k < iterations; k++) {
                 let moved = false;
@@ -684,35 +678,51 @@
                     for (let j = i + 1; j < placed.length; j++) {
                         const c1 = placed[i];
                         const c2 = placed[j];
-
                         if (draggedItem && (draggedItem.id === c1.id || draggedItem.id === c2.id)) continue;
 
                         const dx = c1._x - c2._x;
                         const dy = c1._y - c2._y;
-                        const distSq = dx * dx + dy * dy;
-                        const minDist = radius * 2.5; // width + gap
+                        const overlapX = (tagHalfW * 2 + gap) - Math.abs(dx);
+                        const overlapY = (tagHalfH * 2 + gap) - Math.abs(dy);
 
-                        // Only resolve if very close
-                        if (distSq < minDist * minDist && distSq > 0.1) {
-                            const dist = Math.sqrt(distSq);
-                            const overlap = minDist - dist;
-                            const nx = dx / dist;
-                            const ny = dy / dist;
-
-                            // Move both apart
-                            const moveX = nx * overlap * 0.5;
-                            const moveY = ny * overlap * 0.5;
-
-                            c1._x += moveX;
-                            c1._y += moveY;
-                            c2._x -= moveX;
-                            c2._y -= moveY;
+                        if (overlapX > 0 && overlapY > 0) {
+                            // Separate along axis of least overlap
+                            if (overlapX < overlapY) {
+                                const shift = overlapX / 2;
+                                const sign = dx >= 0 ? 1 : -1;
+                                c1._x += sign * shift;
+                                c2._x -= sign * shift;
+                            } else {
+                                const shift = overlapY / 2;
+                                const sign = dy >= 0 ? 1 : -1;
+                                c1._y += sign * shift;
+                                c2._y -= sign * shift;
+                            }
                             moved = true;
                         }
                     }
                 }
                 if (!moved) break;
             }
+
+            // 4. Constrain concepts to stay inside ALL their assigned circles
+            placed.forEach(c => {
+                if (draggedItem && draggedItem.type === 'concept' && draggedItem.id === c.id) return;
+                const assigned = circles.filter(ci => c.circleIds.includes(ci.id));
+                if (assigned.length === 0) return;
+
+                assigned.forEach(ci => {
+                    const dx = c._x - ci.x;
+                    const dy = c._y - ci.y;
+                    const dist = Math.sqrt(dx * dx + dy * dy);
+                    const maxDist = ci._radius - tagHalfW - 5;
+
+                    if (dist > maxDist && maxDist > 0) {
+                        c._x = ci.x + (dx / dist) * maxDist;
+                        c._y = ci.y + (dy / dist) * maxDist;
+                    }
+                });
+            });
         }
 
         function startDrag(e, type, id) {
