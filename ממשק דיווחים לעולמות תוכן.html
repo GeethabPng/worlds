@@ -15,7 +15,7 @@
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
             height: 100vh;
-            background: linear-gradient(to bottom right, #e9d5ff, #fce7f3, #dbeafe);
+            background: linear-gradient(135deg, #fafbff 0%, #f0f4ff 40%, #fdf4f8 70%, #f5f0ff 100%);
             padding: 0.5rem 1rem;
             overflow: hidden;
             user-select: none;
@@ -41,15 +41,15 @@
             border-radius: 50%;
             background: white;
             border: none;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            box-shadow: 0 4px 12px rgba(99, 102, 241, 0.12);
             font-size: 2rem;
-            color: #9333ea;
+            color: #6366f1;
             cursor: pointer;
             transition: all 0.2s;
         }
 
         .btn-circle:hover {
-            box-shadow: 0 10px 15px rgba(0, 0, 0, 0.15);
+            box-shadow: 0 10px 24px rgba(99, 102, 241, 0.18);
             transform: scale(1.1);
         }
 
@@ -61,7 +61,7 @@
             border-radius: 9999px;
             background: white;
             border: none;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            box-shadow: 0 4px 12px rgba(99, 102, 241, 0.1);
             font-size: 1rem;
             cursor: pointer;
             transition: all 0.2s;
@@ -69,27 +69,27 @@
         }
 
         .btn-save {
-            color: #9333ea;
+            color: #6366f1;
         }
 
         .btn-reset {
-            color: #dc2626;
+            color: #f43f5e;
         }
 
         .btn-save:hover,
         .btn-reset:hover,
         .btn-export:hover,
         .btn-import:hover {
-            box-shadow: 0 10px 15px rgba(0, 0, 0, 0.15);
+            box-shadow: 0 10px 24px rgba(99, 102, 241, 0.15);
             transform: translateY(-2px);
         }
 
         .btn-export {
-            color: #2563eb;
+            color: #3b82f6;
         }
 
         .btn-import {
-            color: #059669;
+            color: #10b981;
         }
 
         .diagram-container {
@@ -99,22 +99,24 @@
             min-height: 0;
             margin-bottom: 0.5rem;
             border-radius: 1rem;
-            background: rgba(255, 255, 255, 0.2);
+            background: rgba(255, 255, 255, 0.45);
             touch-action: none;
         }
 
         .circle {
             position: absolute;
             border-radius: 50%;
-            background: rgba(168, 85, 247, 0.25);
-            border: 4px solid #a855f7;
+            background: rgba(255, 255, 255, 0.4);
+            border: 3px solid rgba(129, 140, 248, 0.45);
             cursor: move;
             transition: width 0.3s, height 0.3s, background-color 0.3s, border-color 0.3s, left 0.3s, top 0.3s;
             display: flex;
             align-items: flex-start;
             justify-content: center;
             padding-top: 1.5rem;
-            color: #581c87;
+            color: #4338ca;
+            box-shadow: 0 8px 32px rgba(99, 102, 241, 0.08), inset 0 0 40px rgba(255, 255, 255, 0.3);
+            backdrop-filter: blur(4px);
         }
 
         /* When dragging, disable transition for smooth follow */
@@ -126,57 +128,62 @@
         }
 
         .circle:hover {
-            border-color: #7c3aed;
-            background: rgba(168, 85, 247, 0.35);
+            border-color: rgba(129, 140, 248, 0.7);
+            background: rgba(255, 255, 255, 0.55);
+            box-shadow: 0 12px 40px rgba(99, 102, 241, 0.12), inset 0 0 40px rgba(255, 255, 255, 0.4);
         }
 
         .circle-title {
-            font-size: 1.25rem;
-            font-weight: bold;
-            padding: 0.25rem 0.75rem;
+            font-size: 1.1rem;
+            font-weight: 700;
+            padding: 0.3rem 0.85rem;
             border-radius: 0.5rem;
-            background: rgba(255, 255, 255, 0.7);
+            background: rgba(255, 255, 255, 0.85);
             text-align: center;
             max-width: 80%;
             pointer-events: auto;
             cursor: text;
+            color: #4338ca;
+            letter-spacing: 0.01em;
         }
 
         .circle-title:hover {
-            background: white;
+            background: rgba(255, 255, 255, 0.95);
         }
 
         .concept-tag {
             position: absolute;
-            background: white;
-            padding: 0.4rem 0.8rem;
+            background: rgba(255, 255, 255, 0.92);
+            padding: 0.3rem 0.7rem;
             border-radius: 999px;
-            font-size: 0.95rem;
-            color: #581c87;
+            font-size: 0.85rem;
+            color: #312e81;
             font-weight: 600;
             cursor: grab;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-            border: 1px solid #a855f7;
+            box-shadow: 0 2px 8px rgba(99, 102, 241, 0.1);
+            border: 1.5px solid rgba(129, 140, 248, 0.3);
             z-index: 50;
             transition: transform 0.2s, box-shadow 0.2s, left 0.3s, top 0.3s;
-            max-width: 160px;
+            max-width: 140px;
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
             transform: translate(-50%, -50%);
+            backdrop-filter: blur(4px);
         }
 
         .concept-tag.is-dragging {
             transition: none;
             z-index: 100;
             transform: translate(-50%, -50%) scale(1.1);
-            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
+            box-shadow: 0 8px 20px rgba(99, 102, 241, 0.2);
             opacity: 0.9;
         }
 
         .concept-tag:hover {
             z-index: 60;
             transform: translate(-50%, -50%) scale(1.05);
+            box-shadow: 0 4px 12px rgba(99, 102, 241, 0.15);
         }
 
         .boxes-container {
@@ -188,23 +195,24 @@
             margin-bottom: 0.25rem;
             min-height: 50px;
             padding: 0.5rem 1rem;
-            background: rgba(255, 255, 255, 0.4);
+            background: rgba(255, 255, 255, 0.65);
             border-radius: 0.75rem;
-            border: 2px dashed rgba(168, 85, 247, 0.3);
+            border: 2px dashed rgba(129, 140, 248, 0.25);
             flex-shrink: 0;
+            backdrop-filter: blur(4px);
         }
 
         .box {
             position: relative;
             /* For proper dragging offset calc */
-            background: linear-gradient(to bottom right, #fcd34d, #fb923c);
-            padding: 0.75rem 1.25rem;
+            background: linear-gradient(135deg, #818cf8, #6366f1);
+            padding: 0.6rem 1.1rem;
             border-radius: 0.75rem;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            box-shadow: 0 4px 14px rgba(99, 102, 241, 0.2);
             cursor: grab;
             font-weight: bold;
             color: white;
-            font-size: 1.1rem;
+            font-size: 1rem;
             transition: transform 0.2s;
         }
 
@@ -224,7 +232,7 @@
             border: none;
             box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
             font-size: 1.5rem;
-            color: #f97316;
+            color: #6366f1;
             cursor: pointer;
             display: flex;
             align-items: center;
@@ -257,12 +265,12 @@
         }
 
         .text-input:focus {
-            box-shadow: 0 0 0 3px rgba(168, 85, 247, 0.4);
+            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.25);
         }
 
         .separate-btn {
             position: absolute;
-            background: #ef4444;
+            background: #f43f5e;
             color: white;
             width: 28px;
             height: 28px;
@@ -274,7 +282,7 @@
             justify-content: center;
             font-size: 14px;
             z-index: 20;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+            box-shadow: 0 2px 8px rgba(244, 63, 94, 0.25);
             top: 0;
             left: 0;
             transform: translate(-30%, -30%);
@@ -289,13 +297,13 @@
 
         .separate-btn:hover {
             transform: translate(-30%, -30%) scale(1.1);
-            background: #dc2626;
+            background: #e11d48;
         }
 
         /* Highlight drop zones */
         .highlight-zone {
-            background-color: rgba(255, 255, 255, 0.5);
-            box-shadow: inset 0 0 20px rgba(168, 85, 247, 0.5);
+            background-color: rgba(255, 255, 255, 0.6);
+            box-shadow: inset 0 0 20px rgba(99, 102, 241, 0.25);
         }
     </style>
 </head>
@@ -340,7 +348,7 @@
         let nextConceptId = 4;
         let nextGroupId = 1;
 
-        const BASE_RADIUS = 130;
+        const BASE_RADIUS = 95;
 
         let draggedItem = null; // { type: 'circle' | 'concept', id: ... }
         let dragOffset = { x: 0, y: 0 };
@@ -432,7 +440,7 @@
             // 0. Pre-calculate Radii (needed for layout)
             circles.forEach(c => {
                 const count = concepts.filter(con => con.circleIds.includes(c.id)).length;
-                c._radius = BASE_RADIUS + (count * 12);
+                c._radius = BASE_RADIUS + Math.sqrt(count) * 30;
             });
 
             // 1. Calculate Venn Layouts for Groups
@@ -647,7 +655,7 @@
             return { x, y };
         }
 
-        // Collision Resolution with rectangular overlap detection
+        // Collision Resolution with sunflower distribution and rectangular overlap detection
         function resolveConceptCollisions() {
             const placed = concepts.filter(c => c.circleIds.length > 0);
 
@@ -659,18 +667,45 @@
                 c._y = pos.y;
             });
 
-            // 2. Add deterministic jitter to avoid perfect stacking
+            // 2. Distribute concepts in sunflower pattern to fill circle area
+            const goldenAngle = Math.PI * (3 - Math.sqrt(5));
+            const groupMap = {};
             placed.forEach(c => {
                 if (draggedItem && draggedItem.type === 'concept' && draggedItem.id === c.id) return;
-                c._x += (c.id * 1337) % 40 - 20;
-                c._y += (c.id * 71) % 40 - 20;
+                const key = [...c.circleIds].sort().join(',');
+                if (!groupMap[key]) groupMap[key] = [];
+                groupMap[key].push(c);
+            });
+
+            Object.values(groupMap).forEach(group => {
+                const n = group.length;
+                if (n <= 1) return;
+
+                // Find available spread radius based on smallest assigned circle
+                const assigned = circles.filter(ci => group[0].circleIds.includes(ci.id));
+                const minRadius = Math.min(...assigned.map(ci => ci._radius));
+                const numCircles = group[0].circleIds.length;
+                // Reduce spread for intersection regions (multiple circles)
+                const spread = Math.max(25, (minRadius - 55) * 0.65 / Math.sqrt(numCircles));
+
+                // Center of distribution
+                let cx = 0, cy = 0;
+                group.forEach(c => { cx += c._x; cy += c._y; });
+                cx /= n; cy /= n;
+
+                group.forEach((c, i) => {
+                    const angle = i * goldenAngle;
+                    const r = Math.sqrt((i + 0.5) / n) * spread;
+                    c._x = cx + r * Math.cos(angle);
+                    c._y = cy + r * Math.sin(angle);
+                });
             });
 
             // 3. Rectangular collision solver
             const iterations = 80;
-            const tagHalfW = 55;  // approximate half-width of concept tag
-            const tagHalfH = 16;  // approximate half-height of concept tag
-            const gap = 6;        // minimum gap between tags
+            const tagHalfW = 50;  // approximate half-width of concept tag
+            const tagHalfH = 14;  // approximate half-height of concept tag
+            const gap = 4;        // minimum gap between tags
 
             for (let k = 0; k < iterations; k++) {
                 let moved = false;
